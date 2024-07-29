@@ -9,6 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 import argparse
 import logging
 import matplotlib.pyplot as plt
+from functools import partial
 
 logging.basicConfig(level=logging.INFO)
 
@@ -95,37 +96,6 @@ class FlexibleDatasetManager:
         max_corr = rolling_corr.max().iloc[0]
         return max_corr
 
-    def find_correlations(self, threshold=0.7, window_size=30, plot=False):
-        results = []
-        dataset_pairs = list(combinations(self.dataset_configs.keys(), 2))
-        
-        def process_pair(pair):
-            h1, h2 = pair
-            cache_key = f"{h1}_{h2}"
-            if cache_key in self.correlation_cache:
-                return self.correlation_cache[cache_key]
-            
-            corr = self.compute_correlation(h1, h2, window_size=window_size)
-            if corr is not None and abs(corr) >= threshold:
-                result = {
-                    'dataset1': self.dataset_metadata[h1]['name'],
-                    'dataset2': self.dataset_metadata[h2]['name'],
-                    'correlation': corr
-                }
-                self.correlation_cache[cache_key] = result
-                if plot:
-                    self.plot_correlation(h1, h2, result)
-                return result
-            return None
-
-        with ProcessPoolExecutor() as executor:
-            for result in executor.map(process_pair, dataset_pairs):
-                if result:
-                    results.append(result)
-
-        self.save_cache()
-        return results
-
     def plot_correlation(self, hash1, hash2, result):
         config1, config2 = self.dataset_configs[hash1], self.dataset_configs[hash2]
         df1 = self.load_dataset(config1['path'], config1['date_column'], config1['value_column'])
@@ -155,6 +125,26 @@ class FlexibleDatasetManager:
                 if date_column and value_column:
                     self.add_dataset(metadata['path'], date_column, value_column)
 
+def process_pair(pair, manager, threshold, window_size, plot):
+    h1, h2 = pair
+    cache_key = f"{h1}_{h2}"
+    if cache_key in manager.correlation_cache:
+        return manager.correlation_cache[cache_key]
+    
+    corr = manager.compute_correlation(h1, h2, window_size=window_size)
+    if corr is not None and abs(corr) >= threshold:
+        result = {
+            'dataset1': manager.dataset_metadata[h1]['name'],
+            'dataset2': manager.dataset_metadata[h2]['name'],
+            'correlation': corr
+        }
+        manager.correlation_cache[cache_key] = result
+        if plot:
+            manager.plot_correlation(h1, h2, result)
+        return result
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description='Flexible Dataset Manager for P-hacking demonstration')
     parser.add_argument('--data_dir', type=str, required=True, help='Directory containing the datasets')
@@ -172,7 +162,17 @@ def main():
     manager = FlexibleDatasetManager(args.data_dir, args.cache_dir, args.output_dir)
     manager.update_datasets(date_column_map)
     
-    correlations = manager.find_correlations(threshold=args.threshold, window_size=args.window_size, plot=args.plot)
+    dataset_pairs = list(combinations(manager.dataset_configs.keys(), 2))
+    
+    # Use partial to pass fixed arguments to process_pair
+    process_pair_with_args = partial(process_pair, manager=manager, threshold=args.threshold, window_size=args.window_size, plot=args.plot)
+    
+    with ProcessPoolExecutor() as executor:
+        results = list(executor.map(process_pair_with_args, dataset_pairs))
+    
+    correlations = [result for result in results if result]
+    
+    manager.save_cache()
     
     print("Spurious correlations found:")
     for corr in correlations:
