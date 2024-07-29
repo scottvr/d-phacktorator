@@ -1,0 +1,10 @@
+{
+    "temperature.csv": ["date", "temp_celsius"],
+    "stock_prices.csv": ["timestamp", "closing_price"],
+    "social_media_trends.json": ["date", "trend_score"],
+    "POP.csv": ["date", "value"],
+    "nifty_it_index.csv": ["Date", "High"],
+    "infy_stock.csv": ["Date", "High"],
+    "Microsoft_Stock.csv": ["Date", "High"]
+}
+
