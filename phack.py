@@ -1,138 +1,131 @@
+import os
+import hashlib
+import json
 import pandas as pd
 import numpy as np
 from scipy import stats
-import matplotlib.pyplot as plt
+from itertools import combinations
+from concurrent.futures import ProcessPoolExecutor
 
-def calculate_changes(data, value_column):
-    """Calculate changes for a given value column."""
-    data['Change'] = data[value_column].diff()
-    
-    # Remove NaNs and Infs
-    data.replace([np.inf, -np.inf], np.nan, inplace=True)
-    data.dropna(subset=['Change'], inplace=True)
-    
-    return data
+class FlexibleDatasetManager:
+    def __init__(self, data_dir, cache_dir):
+        self.data_dir = data_dir
+        self.cache_dir = cache_dir
+        self.dataset_metadata = {}
+        self.dataset_configs = {}
+        self.correlation_cache = {}
+        self.load_metadata()
+        self.load_cache()
 
-def find_correlations(data, value_col1, value_col2, window_sizes=[12, 24, 36, 48, 60]):
-    """Find correlations between two columns of data."""
-    correlations = []
-    for window in window_sizes:
-        for shift in range(-12, 13):  # Shift up to 1 year in either direction
-            col1_data = data[value_col1].shift(shift)
-            col2_data = data[value_col2].rolling(window=window).mean()
+    def load_metadata(self):
+        for filename in os.listdir(self.data_dir):
+            if filename.endswith(('.csv', '.json', '.parquet')):
+                path = os.path.join(self.data_dir, filename)
+                dataset_hash = self.compute_hash(path)
+                self.dataset_metadata[dataset_hash] = {
+                    'name': filename,
+                    'path': path,
+                }
+
+    def compute_hash(self, file_path):
+        return hashlib.md5(open(file_path, 'rb').read()).hexdigest()
+
+    def load_cache(self):
+        cache_file = os.path.join(self.cache_dir, 'correlation_cache.json')
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r') as f:
+                self.correlation_cache = json.load(f)
+
+    def save_cache(self):
+        cache_file = os.path.join(self.cache_dir, 'correlation_cache.json')
+        with open(cache_file, 'w') as f:
+            json.dump(self.correlation_cache, f)
+
+    def load_dataset(self, file_path, date_column, value_column):
+        if file_path.endswith('.csv'):
+            df = pd.read_csv(file_path, parse_dates=[date_column])
+        elif file_path.endswith('.json'):
+            df = pd.read_json(file_path)
+        elif file_path.endswith('.parquet'):
+            df = pd.read_parquet(file_path)
+        else:
+            raise ValueError(f"Unsupported file format: {file_path}")
+
+        df.set_index(date_column, inplace=True)
+        return df[[value_column]]
+
+    def add_dataset(self, file_path, date_column, value_column):
+        dataset_hash = self.compute_hash(file_path)
+        self.dataset_configs[dataset_hash] = {
+            'path': file_path,
+            'date_column': date_column,
+            'value_column': value_column
+        }
+        # Update metadata
+        self.dataset_metadata[dataset_hash].update({
+            'date_column': date_column,
+            'value_column': value_column
+        })
+
+    def compute_correlation(self, hash1, hash2, window_size=30):
+        config1, config2 = self.dataset_configs[hash1], self.dataset_configs[hash2]
+        df1 = self.load_dataset(config1['path'], config1['date_column'], config1['value_column'])
+        df2 = self.load_dataset(config2['path'], config2['date_column'], config2['value_column'])
+        
+        aligned_data = pd.concat([df1, df2], axis=1, join='inner')
+        if len(aligned_data) < window_size:
+            return None
+        
+        rolling_corr = aligned_data.rolling(window=window_size).corr().iloc[window_size-1::2]
+        max_corr = rolling_corr.max().iloc[0]
+        return max_corr
+
+    def find_correlations(self, threshold=0.7):
+        results = []
+        dataset_pairs = list(combinations(self.dataset_configs.keys(), 2))
+        
+        def process_pair(pair):
+            h1, h2 = pair
+            cache_key = f"{h1}_{h2}"
+            if cache_key in self.correlation_cache:
+                return self.correlation_cache[cache_key]
             
-            valid_data = pd.DataFrame({value_col1: col1_data, value_col2: col2_data}).dropna()
-            if len(valid_data) > window:
-                try:
-                    r, p = stats.pearsonr(valid_data[value_col1], valid_data[value_col2])
-                    correlations.append((window, shift, r, p))
-                except ValueError:
-                    continue
-    
-    return pd.DataFrame(correlations, columns=['Window', 'Shift', 'Correlation', 'P-value'])
+            corr = self.compute_correlation(h1, h2)
+            if corr is not None and abs(corr) >= threshold:
+                result = {
+                    'dataset1': self.dataset_metadata[h1]['name'],
+                    'dataset2': self.dataset_metadata[h2]['name'],
+                    'correlation': corr
+                }
+                self.correlation_cache[cache_key] = result
+                return result
+            return None
 
-def load_sst_data():
-    """Load sea surface temperature data."""
-    url = "https://psl.noaa.gov/data/correlation/amon.us.long.data"
-    
-    # Read the data, skip initial metadata row
-    sst_data = pd.read_csv(url, delim_whitespace=True, skiprows=1, header=None, na_values='-99.99')
-    
-    # Assign proper column names
-    col_names = ['Year'] + [f'Month_{i+1}' for i in range(12)]
-    sst_data.columns = col_names
-    
-    # Filter out rows that are footnotes or contain metadata by keeping only numeric 'Year' rows
-    sst_data = sst_data[pd.to_numeric(sst_data['Year'], errors='coerce').notnull()]
-    
-    # Convert all columns to numeric, forcing errors to NaN
-    sst_data = sst_data.apply(pd.to_numeric, errors='coerce')
-    
-    # Drop rows with any NaN values
-    sst_data.dropna(inplace=True)
-    
-    # Convert the data to a long format
-    sst_data_long = sst_data.melt(id_vars=['Year'], var_name='Month', value_name='SST')
-    sst_data_long['Month'] = sst_data_long['Month'].apply(lambda x: int(x.split('_')[1]))
-    
-    # Create a 'Date' column
-    sst_data_long['Date'] = pd.to_datetime(sst_data_long[['Year', 'Month']].assign(DAY=1))
-    
-    # Set 'Date' as index and drop rows with NaN values
-    sst_data_long.set_index('Date', inplace=True)
-    sst_data_long.dropna(inplace=True)
-    
-    return sst_data_long['SST']
+        with ProcessPoolExecutor() as executor:
+            for result in executor.map(process_pair, dataset_pairs):
+                if result:
+                    results.append(result)
 
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from scipy import stats
-
-def plot_data(data, value_col1, value_col2, significant_corrs=None):
-    """Plot two columns of data against each other with annotations for significant correlations."""
-    fig, ax1 = plt.subplots(figsize=(12, 6))
-
-    # Plot the first dataset
-    ax1.set_xlabel('Date')
-    ax1.set_ylabel(value_col1, color='tab:blue')
-    ax1.plot(data.index, data[value_col1], color='tab:blue', label=value_col1)
-    ax1.tick_params(axis='y', labelcolor='tab:blue')
-
-    # Create a second y-axis to plot the second dataset
-    ax2 = ax1.twinx()
-    ax2.set_ylabel(value_col2, color='tab:red')
-    ax2.plot(data.index, data[value_col2], color='tab:red', label=value_col2)
-    ax2.tick_params(axis='y', labelcolor='tab:red')
-
-    # Title and layout
-    plt.title(f'{value_col1} vs {value_col2}')
-    fig.tight_layout()
-    
-    # Create a legend
-    lines, labels = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines + lines2, labels + labels2, loc='upper left')
-
-    # Add significant correlations if provided
-    if significant_corrs is not None:
-        for _, row in significant_corrs.iterrows():
-            window = row['Window']
-            shift = row['Shift']
-            correlation = row['Correlation']
-            p_value = row['P-value']
-
-            # Calculate the start and end indices of the correlation window
-            start_idx = data.index.min() + pd.DateOffset(months=shift)
-            end_idx = start_idx + pd.DateOffset(months=window)
-            
-            if start_idx < data.index.max() and end_idx <= data.index.max():
-                # Use a marker for the start of the window
-                ax1.axvline(start_idx, color='orange', linestyle='--', label=f'Corr Start: {correlation:.2f}' if not plt.gca().get_legend_handles_labels()[1] else "")
-                
-                # Add a shaded region for the window
-                ax1.axvspan(start_idx, end_idx, color='yellow', alpha=0.3, label=f'Window: {window}, Shift: {shift}' if not plt.gca().get_legend_handles_labels()[1] else "")
-                
-                # Add text annotation
-                ax1.text(start_idx, data[value_col1].max(), f'Corr: {correlation:.2f}\nP: {p_value:.3f}', 
-                         color='black', fontsize=8, ha='left', va='top')
-
-    plt.show()
+        self.save_cache()
+        return results
 
 def main():
-    # Example data loading and processing
-    sst_data = load_sst_data()
-    aligned_data = sst_data.to_frame().rename(columns={'SST': 'Temperature'})
-    processed_data = calculate_changes(aligned_data, 'Temperature')
+    data_dir = 'data_directory'  # Replace with actual data directory path
+    cache_dir = 'cache_directory'  # Replace with actual cache directory path
     
-    correlations = find_correlations(processed_data, 'Temperature', 'Change')
+    manager = FlexibleDatasetManager(data_dir, cache_dir)
     
-    print("Top 5 'most significant' correlations:")
-    top_correlations = correlations.sort_values('P-value').head()
-    print(top_correlations)
+    # Add datasets (replace with actual dataset file names and column names)
+    manager.add_dataset('temperature.csv', 'date', 'temp_celsius')
+    manager.add_dataset('stock_prices.csv', 'timestamp', 'closing_price')
+    manager.add_dataset('social_media_trends.json', 'date', 'trend_score')
+    # Add more datasets as needed...
+
+    correlations = manager.find_correlations(threshold=0.7)
     
-    plot_data(aligned_data, 'Temperature', 'Change', significant_corrs=top_correlations)
+    print("Spurious correlations found:")
+    for corr in correlations:
+        print(f"High correlation found between {corr['dataset1']} and {corr['dataset2']}: {corr['correlation']:.2f}")
 
 if __name__ == "__main__":
     main()
