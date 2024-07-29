@@ -1,7 +1,7 @@
 # d-phacktorator
 The D-Phacktorator - the dataset p-hacking fact-creator and phony correlation generator
 
-# quick explanation of currwnt files
+# quick explanation of current files
 (just in case someone stumbles upon this before I write good docs and such.)
 
 The tool is ```phackt.py```. the dphack.py file is cruft but contains some  data munging code necessary for the sets I use in a demo plot. You'll want to run ```phackt.py``` (eventually)
