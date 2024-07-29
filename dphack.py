@@ -11,6 +11,17 @@ def load_sp500_data(start_date='1950-01-01', end_date='2023-12-31'):
     sp500 = yf.download('^GSPC', start=start_date, end=end_date)
     return sp500['Close'].resample('M').last()
 
+def load_sst_data():
+    """Load sea surface temperature data."""
+    url = "https://www.esrl.noaa.gov/psd/data/correlation/amon.us.long.data"
+    sst_data = pd.read_csv(url, delim_whitespace=True, skiprows=1, na_values='-99.99')
+    
+    # Process the data
+    sst_data['Date'] = pd.to_datetime(sst_data['YR'].astype(str) + '-' + sst_data['MON'].astype(str), format='%Y-%m')
+    sst_data.set_index('Date', inplace=True)
+    
+    return sst_data['ANOM']
+
 def load_climate_data():
     """Load global temperature anomalies data."""
     url = "https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv"
@@ -82,10 +93,11 @@ def plot_data(data):
     plt.show()
 
 def main():
-    sp500_data = load_sp500_data()
+#    sp500_data = load_sp500_data()
+    sst_data = load_sst_data()
     climate_data = load_climate_data()
     
-    aligned_data = align_and_prepare_data(sp500_data, climate_data)
+    aligned_data = align_and_prepare_data(sst_data, climate_data)
     processed_data = calculate_returns_and_changes(aligned_data)
     
     correlations = find_correlations(processed_data)
