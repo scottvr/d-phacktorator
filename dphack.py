@@ -27,7 +27,7 @@ def load_sst_data():
     url = "https://psl.noaa.gov/data/correlation/amon.us.long.data"
     
     # Read the data, skip initial metadata row
-    sst_data = pd.read_csv(url, delim_whitespace=True, skiprows=1, header=None, na_values='-99.99')
+    sst_data = pd.read_csv(url, sep='\s+', skiprows=1, header=None, na_values='-99.99')
     
     # Assign proper column names
     col_names = ['Year'] + [f'Month_{i+1}' for i in range(12)]
@@ -122,14 +122,13 @@ def plot_data(data, value_col1, value_col2, significant_corrs=None):
         for _, row in significant_corrs.iterrows():
             shift = row['Shift']
             # Calculate the index position for the x_loc, ensuring it is an integer
-            idx_pos = int(len(data) / 2) + shift
+            idx_pos = int(round(len(data) / 2) + shift)
             if 0 <= idx_pos < len(data):  # Check if the index position is valid
                 x_loc = data.index[idx_pos]
                 plt.axvline(x=x_loc, color='yellow', linestyle='--', label=f'Correlation: {row["Correlation"]:.2f}')
     
     # Display plot
     plt.show()
-
 
 def main():
     sst_data = load_sst_data()
