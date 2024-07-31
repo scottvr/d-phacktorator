@@ -29,7 +29,6 @@ the dataset p-hacking fact-creator and phony correlation generator (and choose-y
 ## Installation:
 Clone this repo.
 Install the dphackt lib as described in the next section.
-(You could just move the dphackt/ subdirectory into the d-phacktorator/ subdirectory if you don't wish to install the lib to your Python environment.)
 
 ## Usage:
 ```
