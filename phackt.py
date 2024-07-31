@@ -60,13 +60,22 @@ def main():
     
     correlation_analysis = CorrelationAnalysis(window_size=args.window_size, threshold=args.threshold)
     
-    # Process dataset pairs
+  #  with ProcessPoolExecutor() as executor:
+  #      results = list(executor.map(
+  #          lambda pair: correlation_analysis.process(manager, pair),
+  #          manager.get_dataset_pairs()
+  #      ))
+  #  
+  
+    dataset_pairs = manager.get_dataset_pairs()
+  
     with ProcessPoolExecutor() as executor:
         results = list(executor.map(
-            lambda pair: correlation_analysis.process(manager, pair),
-            manager.get_dataset_pairs()
+            process_dataset_pair,
+            [(manager, correlation_analysis, pair) for pair in dataset_pairs]
         ))
     
+    correlations = [result for result in results if result]
     correlations = [result for result in results if result]
     
     print("Spurious correlations found:")
