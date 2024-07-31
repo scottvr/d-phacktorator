@@ -8,6 +8,7 @@ Until such time as I do, maybe see [this guy's site](https://www.tylervigen.com/
 # dphackt
 I've tried to abstract and genericize the support methods into their own library, after considering that they might be of value to someone doing something else. It's possible this is an inadvertent incremental reinvinting of the wheel of course, since it isn't the product of a well-planned utility, rather it came about when I wanted to generate my own spurious correlations using arbitrary datasets.
 
+## Usage:
 ```python
 from dphackt import DatasetManager, CorrelationAnalysis
 
