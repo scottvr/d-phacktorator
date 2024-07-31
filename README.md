@@ -73,9 +73,8 @@ pip install .
 If you wish to install via PyPi:
 ```bash
 pip install dphackt
-
-## Usage:
 ```
+## Usage:
 dphackt-cli \
           --data_dir /path/to/data \
           --cache_dir /path/to/cache \
