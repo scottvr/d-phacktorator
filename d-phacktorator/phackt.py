@@ -4,8 +4,7 @@ import argparse
 import logging
 from concurrent.futures import ProcessPoolExecutor
 import matplotlib.pyplot as plt
-from dphackt.dataset_manager import DatasetManager
-from dphackt.analysis_tasks import CorrelationAnalysis
+from dphackt import DatasetManager, CorrelationAnalysis
 
 logging.basicConfig(level=logging.INFO)
 
