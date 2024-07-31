@@ -27,5 +27,8 @@ dependencies = [
     'matplotlib>=3.0.0'
 ]
 
+[project.scripts]
+dphackt-cli = "dphackt.phackt:cli"
+
 [tool.setuptools.packages.find]
 exclude = ["tests", "examples"]
