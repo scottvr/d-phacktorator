@@ -75,6 +75,7 @@ If you wish to install via PyPi:
 pip install dphackt
 ```
 ## Usage:
+```
 dphackt-cli \
           --data_dir /path/to/data \
           --cache_dir /path/to/cache \
