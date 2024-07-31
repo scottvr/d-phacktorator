@@ -21,13 +21,14 @@ Install the dphackt lib as described in the next section.
 
 ### Usage:
 ```
-python ./d-phacktorator/dphackt.py --data_dir /path/to/data \
-                                   --cache_dir /path/to/cache \
-                                   --output_dir /path/to/output \
-                                   --window_size 30 \
-                                   --threshold 0.7 \
-                                   --date_column_map /path/to/date_column_map.json \
-                                   [--plot]
+python ./d-phacktorator/dphackt.py \
+          --data_dir /path/to/data \
+          --cache_dir /path/to/cache \
+          --output_dir /path/to/output \
+          --window_size 30 \
+          --threshold 0.7 \
+          --date_column_map /path/to/date_column_map.json \
+          [--plot]
 ```
 Where in the above, ```data_dir``` is a directory with two or more CSV, JSON, or parquet files containing time series data, and you are wanting to find correlations with a window size of 30 days and a threshold of 0.7 between any (and all) of them.
 
