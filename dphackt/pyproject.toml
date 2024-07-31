@@ -7,7 +7,6 @@ name = "dphackt"
 version = "0.1.0"
 description = "A flexible data analysis library for handling various datasets and performing analyses. Developed in support of the D-phacktorator."
 readme = "README.md"
-readme-content-type = "text/markdown"
 requires-python = ">=3.7"
 license = { text = "MIT License" }
 authors = [
@@ -26,9 +25,9 @@ classifiers = [
     "Programming Language :: Python :: 3.10"
 ]
 dependencies = [
-    'pandas >= "1.0.0"',
-    'numpy >= "1.18.0"',
-    'matplotlib >= "3.0.0"'
+    'pandas>=1.0.0',
+    'numpy>=1.18.0',
+    'matplotlib>=3.0.0'
 ]
 
 [tool.setuptools.packages.find]
