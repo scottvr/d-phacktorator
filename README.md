@@ -3,7 +3,7 @@
 ## d-phacktorator 
 the dataset p-hacking fact-creator and phony correlation generator (and choose-your-own-letter-arrangement acronym) project.
 
-I will properly write up the motivation, purpose, and a more detailed explanation of the functionality eventually. 
+Disclaimer: I am not a data scientist or statistician or anything of the sort; I just find drawing correlations between ludicrous disparate things amusing. (Oh, and also there is that dangerous habit of some unscrupulous academics of "p-hacking" and the trend of papers using such data dredgery passing peer review without notice.) I will properly write up the motivation, purpose, and a more detailed explanation of the functionality eventually. The disclaimer is because I no nothing of properly selecting rolling window size or thresholds for any proper purpose other than the aforementioned amusement of seeing "proof" of relationships where none should probably be interpreted as such.
 
 Until such time as I do, maybe see [Tyler Vigen's spurious correlation site](https://www.tylervigen.com/spurious-correlations) for inspiration. 
 
