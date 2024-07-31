@@ -3,9 +3,9 @@
 ## d-phacktorator 
 the dataset p-hacking fact-creator and phony correlation generator (and choose-your-own-letter-arrangement acronym) project.
 
-I will properly write up the motivation, purpose, and functionality of the tool eventually. 
+I will properly write up the motivation, purpose, and a more detailed explanation of the functionality eventually. 
 
-Until such time as I do, maybe see [Tyles Vigen's spurious correlation site](https://www.tylervigen.com/spurious-correlations) for inspiration. 
+Until such time as I do, maybe see [Tyler Vigen's spurious correlation site](https://www.tylervigen.com/spurious-correlations) for inspiration. 
 
 ### Features
 
@@ -15,7 +15,9 @@ Until such time as I do, maybe see [Tyles Vigen's spurious correlation site](htt
 - Utilizes multiprocessing for efficient computation
 
 ### Installation:
+Clone this repo.
 Install the dphackt lib as described in the next section.
+(You could just move the dphackt/ subdirectory into the d-phacktorator/ subdirectory if you don't wish to install the lib to your Python environment.)
 
 ### Usage:
 ```
@@ -27,7 +29,7 @@ python ./d-phacktorator/dphackt.py --data_dir /path/to/data \
                                    --date_column_map /path/to/date_column_map.json \
                                    [--plot]
 ```
-Where in the above ```data_dir``` is a directory with CSV, JSON, or parquet files containing time series data, and you are wanting to find correlations with a window size of 30 days and a threshold of 0.7 between any (and all) of them.
+Where in the above, ```data_dir``` is a directory with two or more CSV, JSON, or parquet files containing time series data, and you are wanting to find correlations with a window size of 30 days and a threshold of 0.7 between any (and all) of them.
 
 ### Arguments
 
@@ -76,4 +78,4 @@ results = analysis.process(manager, manager.get_dataset_pairs()[0])
 print(results)
 ```
 
-For more detailed usage, see the D-phacktorator demo in its subdirectory.
+For more detailed usage, see the d-phacktorator demo in its subdirectory.
