@@ -2,7 +2,7 @@
 install the dphackt library
 e.g.:
 ```bash
-cd ..
+cd ../dphackt
 python ./setup.py
 cd -
 ```
