@@ -16,8 +16,46 @@ I am absolutely _not_ a data scientist or statistician or anything of the sort; 
 ## What?
 Essentially this is another outgrowth from my enjoyment of creating ludicrous things. I find recursion to be a mildly ludicrous thing itself, so of course I am _really_ amused by creating ludicrous things that do ludicrous things such as themselves creating ludicrous things [... that do ... ad infinitum ] and so on. Please do check out my other projects for more things I find amusing and at times even useful (just like recursion I guess.)
 
-# d-phacktorator 
-the dataset p-hacking fact-creator and phony correlation generator (and choose-your-own-letter-arrangement acronym) project.
+# dphackt (the library)
+I've tried to abstract and genericize the support methods from the d-phacktorator into their own library (dphackt), after considering that they might be of value to someone doing something else. It's possible this is an inadvertent incremental reinvinting of the wheel of course, since it isn't the product of a well-planned utility, rather it came about when I wanted to generate my own spurious correlations using arbitrary datasets.
+
+## Features
+
+- Supports multiple data formats: `.csv`, `.json`, `.parquet`
+- Caches computed correlations for faster repeated analysis
+- Utilizes multiprocessing for efficient computation
+
+## Installation
+If you cloned the github source repo:
+```bash
+cd dphackt
+pip install .
+```
+If you wish to install via PyPi:
+```bash
+pip install dphackt
+```
+
+## Usage:
+```python
+from dphackt import DatasetManager, CorrelationAnalysis
+
+# Initialize DatasetManager
+manager = DatasetManager("path/to/data", "path/to/cache")
+
+# Add datasets
+manager.add_dataset("dataset0.csv", "date_column", "value_column")
+manager.add_dataset("dataset1.csv", "date_column", "value_column")
+
+# Perform correlation analysis
+analysis = CorrelationAnalysis(window_size=29, threshold=0.7)
+results = analysis.process(manager, manager.get_dataset_pairs()[-1])
+
+print(results)
+```
+
+# the d-phacktorator (dphackt-cli)
+the dataset p-hacking fact-creator and phony correlation generator (and choose-your-own-letter-arrangement acronym)
 
 ## Features
 
@@ -27,12 +65,18 @@ the dataset p-hacking fact-creator and phony correlation generator (and choose-y
 - Utilizes multiprocessing for efficient computation
 
 ## Installation:
-Clone this repo.
-Install the dphackt lib as described in the next section.
+If you cloned the github source repo:
+```bash
+cd dphackt
+pip install .
+```
+If you wish to install via PyPi:
+```bash
+pip install dphackt
 
 ## Usage:
 ```
-python ./d-phacktorator/dphackt.py \
+dphackt-cli \
           --data_dir /path/to/data \
           --cache_dir /path/to/cache \
           --output_dir /path/to/output \
@@ -73,32 +117,3 @@ The tool will output the list of detected correlations and save plots of these c
 
 ## Examples
 to come.
-
-# dphackt
-I've tried to abstract and genericize the support methods into their own library, after considering that they might be of value to someone doing something else. It's possible this is an inadvertent incremental reinvinting of the wheel of course, since it isn't the product of a well-planned utility, rather it came about when I wanted to generate my own spurious correlations using arbitrary datasets.
-
-## Features
-
-- Supports multiple data formats: `.csv`, `.json`, `.parquet`
-- Caches computed correlations for faster repeated analysis
-- Utilizes multiprocessing for efficient computation
-
-## Usage:
-```python
-from dphackt import DatasetManager, CorrelationAnalysis
-
-# Initialize DatasetManager
-manager = DatasetManager("path/to/data", "path/to/cache")
-
-# Add datasets
-manager.add_dataset("dataset1.csv", "date_column", "value_column")
-manager.add_dataset("dataset2.csv", "date_column", "value_column")
-
-# Perform correlation analysis
-analysis = CorrelationAnalysis(window_size=30, threshold=0.7)
-results = analysis.process(manager, manager.get_dataset_pairs()[0])
-
-print(results)
-```
-
-For more detailed usage, see the d-phacktorator demo in its subdirectory.

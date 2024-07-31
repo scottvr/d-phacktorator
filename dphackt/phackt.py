@@ -35,7 +35,7 @@ def process_dataset_pair(args):
     dataset_manager, correlation_analysis, pair = args
     return correlation_analysis.process(dataset_manager, pair)
 
-def main():
+def cli():
     parser = argparse.ArgumentParser(description='Spurious Correlation Demonstration')
     parser.add_argument('--data_dir', type=str, required=True, help='Directory containing the datasets')
     parser.add_argument('--cache_dir', type=str, required=True, help='Directory to store the cache')
@@ -86,4 +86,4 @@ def main():
     manager.clean_cache()
 
 if __name__ == "__main__":
-    main()
+    cli()
