@@ -32,6 +32,10 @@ def plot_correlation(dataset_manager, result, output_dir):
     plt.close()
     logging.info(f"Saved plot to {output_file}")
 
+def process_dataset_pair(args):
+    dataset_manager, correlation_analysis, pair = args
+    return correlation_analysis.process(dataset_manager, pair)
+
 def main():
     parser = argparse.ArgumentParser(description='Spurious Correlation Demonstration')
     parser.add_argument('--data_dir', type=str, required=True, help='Directory containing the datasets')
